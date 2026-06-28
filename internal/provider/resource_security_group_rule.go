@@ -26,7 +26,7 @@ var _ resource.ResourceWithConfigure = &securityGroupRuleResource{}
 var _ resource.ResourceWithImportState = &securityGroupRuleResource{}
 
 type securityGroupRuleResource struct {
-	client *client.Client
+	resourceBase
 }
 
 type securityGroupRuleResourceModel struct {
@@ -139,18 +139,6 @@ func (r *securityGroupRuleResource) Schema(_ context.Context, _ resource.SchemaR
 	}
 }
 
-func (r *securityGroupRuleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	r.client = apiClient
-}
-
 func (r *securityGroupRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan securityGroupRuleResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -165,7 +153,7 @@ func (r *securityGroupRuleResource) Create(ctx context.Context, req resource.Cre
 	}
 	rule, err := r.client.CreateSecurityGroupRule(ctx, sgID, ruleInput(plan))
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Security Group Rule Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Security Group Rule", err)
 		return
 	}
 	setRuleState(&plan, rule)
@@ -184,12 +172,7 @@ func (r *securityGroupRuleResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 	rule, err := r.client.GetSecurityGroupRule(ctx, sgID, ruleID)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Security Group Rule Failed", err.Error())
+	if handleReadError(ctx, err, "Security Group Rule", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setRuleState(&state, rule)
@@ -210,7 +193,7 @@ func (r *securityGroupRuleResource) Update(ctx context.Context, req resource.Upd
 	}
 	rule, err := r.client.UpdateSecurityGroupRule(ctx, sgID, ruleID, ruleInput(plan))
 	if err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Security Group Rule Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Security Group Rule", err)
 		return
 	}
 	setRuleState(&plan, rule)
@@ -229,7 +212,7 @@ func (r *securityGroupRuleResource) Delete(ctx context.Context, req resource.Del
 		return
 	}
 	if err := r.client.DeleteSecurityGroupRule(ctx, sgID, ruleID); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Security Group Rule Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Security Group Rule", err)
 	}
 }
 

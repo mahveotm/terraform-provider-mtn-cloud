@@ -7,15 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &instanceTypeDataSource{}
 var _ datasource.DataSourceWithConfigure = &instanceTypeDataSource{}
 
 type instanceTypeDataSource struct {
-	client *client.Client
+	dataSourceBase
 }
 
 type instanceTypeDataSourceModel struct {
@@ -43,18 +41,6 @@ func (d *instanceTypeDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 			"default_layout_id": dschema.Int64Attribute{Computed: true, Description: "ID of the instance type's default layout, used when provisioning instances."},
 		},
 	}
-}
-
-func (d *instanceTypeDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	d.client = apiClient
 }
 
 func (d *instanceTypeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

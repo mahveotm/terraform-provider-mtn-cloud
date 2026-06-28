@@ -15,7 +15,7 @@ var _ datasource.DataSource = &servicePlanDataSource{}
 var _ datasource.DataSourceWithConfigure = &servicePlanDataSource{}
 
 type servicePlanDataSource struct {
-	client *client.Client
+	dataSourceBase
 }
 
 type servicePlanDataSourceModel struct {
@@ -51,18 +51,6 @@ func (d *servicePlanDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 			"max_storage": dschema.Int64Attribute{Computed: true, Description: "Maximum storage the plan provides, in bytes."},
 		},
 	}
-}
-
-func (d *servicePlanDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	d.client = apiClient
 }
 
 func (d *servicePlanDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

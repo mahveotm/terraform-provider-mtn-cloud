@@ -7,15 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &virtualImageDataSource{}
 var _ datasource.DataSourceWithConfigure = &virtualImageDataSource{}
 
 type virtualImageDataSource struct {
-	client *client.Client
+	dataSourceBase
 }
 
 type virtualImageDataSourceModel struct {
@@ -47,18 +45,6 @@ func (d *virtualImageDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 			"is_public":  dschema.BoolAttribute{Computed: true, Description: "Whether the image is publicly available."},
 		},
 	}
-}
-
-func (d *virtualImageDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	d.client = apiClient
 }
 
 func (d *virtualImageDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

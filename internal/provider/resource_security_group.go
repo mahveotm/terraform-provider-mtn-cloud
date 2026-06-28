@@ -16,7 +16,7 @@ var _ resource.ResourceWithConfigure = &securityGroupResource{}
 var _ resource.ResourceWithImportState = &securityGroupResource{}
 
 type securityGroupResource struct {
-	client *client.Client
+	resourceBase
 }
 
 type securityGroupResourceModel struct {
@@ -48,18 +48,6 @@ func (r *securityGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 	}
 }
 
-func (r *securityGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	r.client = apiClient
-}
-
 func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan securityGroupResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -68,7 +56,7 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 	}
 	sg, err := r.client.CreateSecurityGroup(ctx, plan.Name.ValueString(), plan.Description.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Security Group Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Security Group", err)
 		return
 	}
 	setSecurityGroupState(&plan, sg)
@@ -81,18 +69,12 @@ func (r *securityGroupResource) Read(ctx context.Context, req resource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Security Group ID", err.Error())
+	id, ok := parseID(state.ID, "Security Group", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	sg, err := r.client.GetSecurityGroup(ctx, id)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Security Group Failed", err.Error())
+	if handleReadError(ctx, err, "Security Group", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setSecurityGroupState(&state, sg)
@@ -105,14 +87,13 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(plan.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Security Group ID", err.Error())
+	id, ok := parseID(plan.ID, "Security Group", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	sg, err := r.client.UpdateSecurityGroup(ctx, id, plan.Name.ValueString(), plan.Description.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Security Group Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Security Group", err)
 		return
 	}
 	setSecurityGroupState(&plan, sg)
@@ -125,13 +106,12 @@ func (r *securityGroupResource) Delete(ctx context.Context, req resource.DeleteR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Security Group ID", err.Error())
+	id, ok := parseID(state.ID, "Security Group", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if err := r.client.DeleteSecurityGroup(ctx, id); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Security Group Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Security Group", err)
 	}
 }
 

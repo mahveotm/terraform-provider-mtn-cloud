@@ -25,8 +25,7 @@ var _ resource.ResourceWithConfigure = &networkResource{}
 var _ resource.ResourceWithImportState = &networkResource{}
 
 type networkResource struct {
-	client   *client.Client
-	defaults *mtnCloudProviderData
+	resourceBase
 }
 
 type networkResourceModel struct {
@@ -128,19 +127,6 @@ func (r *networkResource) Schema(ctx context.Context, _ resource.SchemaRequest, 
 	}
 }
 
-func (r *networkResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	data, ok := configuredProvider(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *mtnCloudProviderData.")
-		return
-	}
-	r.client = data.Client
-	r.defaults = data
-}
-
 func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan networkResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -169,7 +155,7 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 	created, err := r.client.CreateNetwork(ctx, r.networkInput(ctx, plan, resolved))
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Network Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Network", err)
 		return
 	}
 	network, err := r.client.GetNetwork(ctx, created.ID)
@@ -187,18 +173,12 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Network ID", err.Error())
+	id, ok := parseID(state.ID, "Network", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	network, err := r.client.GetNetwork(ctx, id)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Network Failed", err.Error())
+	if handleReadError(ctx, err, "Network", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setNetworkComputed(&state, network)
@@ -222,13 +202,12 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
 
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Network ID", err.Error())
+	id, ok := parseID(state.ID, "Network", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if _, err := r.client.UpdateNetwork(ctx, id, r.networkInput(ctx, plan, resolvedNetwork{})); err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Network Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Network", err)
 		return
 	}
 	network, err := r.client.GetNetwork(ctx, id)
@@ -255,13 +234,12 @@ func (r *networkResource) Delete(ctx context.Context, req resource.DeleteRequest
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Network ID", err.Error())
+	id, ok := parseID(state.ID, "Network", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if err := r.client.DeleteNetwork(ctx, id); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Network Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Network", err)
 	}
 }
 

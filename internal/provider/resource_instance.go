@@ -29,8 +29,7 @@ var _ resource.ResourceWithConfigure = &instanceResource{}
 var _ resource.ResourceWithImportState = &instanceResource{}
 
 type instanceResource struct {
-	client   *client.Client
-	defaults *mtnCloudProviderData
+	resourceBase
 }
 
 type instanceResourceModel struct {
@@ -148,19 +147,6 @@ func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest,
 	}
 }
 
-func (r *instanceResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	data, ok := configuredProvider(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *mtnCloudProviderData.")
-		return
-	}
-	r.client = data.Client
-	r.defaults = data
-}
-
 func (r *instanceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan instanceResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -191,7 +177,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 	instance, err := r.client.ProvisionInstance(ctx, input)
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Instance Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Instance", err)
 		return
 	}
 	if plan.WaitForReady.ValueBool() {
@@ -219,18 +205,12 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 	ctx, cancel := context.WithTimeout(ctx, readTimeout)
 	defer cancel()
 
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Instance ID", err.Error())
+	id, ok := parseID(state.ID, "Instance", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	instance, err := r.client.GetInstance(ctx, id)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Instance Failed", err.Error())
+	if handleReadError(ctx, err, "Instance", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setInstanceObservedState(&state, instance)
@@ -254,9 +234,8 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
 
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Instance ID", err.Error())
+	id, ok := parseID(state.ID, "Instance", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if !plan.Plan.Equal(state.Plan) {
@@ -278,7 +257,7 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		Labels:      labels,
 	})
 	if err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Instance Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Instance", err)
 		return
 	}
 	plan.ID = state.ID
@@ -305,13 +284,12 @@ func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteReques
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Instance ID", err.Error())
+	id, ok := parseID(state.ID, "Instance", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if err := r.client.DeleteInstance(ctx, id); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Instance Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Instance", err)
 	}
 }
 
@@ -456,24 +434,6 @@ func (r *instanceResource) setComputedTags(ctx context.Context, data *instanceRe
 	data.LabelsAll = labelsAll
 	data.TagsAll = tagsAll
 	return diags
-}
-
-func stringList(ctx context.Context, value types.List) []string {
-	if value.IsNull() || value.IsUnknown() {
-		return nil
-	}
-	var result []string
-	_ = value.ElementsAs(ctx, &result, false)
-	return result
-}
-
-func stringMap(ctx context.Context, value types.Map) map[string]string {
-	if value.IsNull() || value.IsUnknown() {
-		return nil
-	}
-	var result map[string]string
-	_ = value.ElementsAs(ctx, &result, false)
-	return result
 }
 
 func firstNonEmpty(values ...string) string {

@@ -20,7 +20,7 @@ var _ resource.ResourceWithConfigure = &storageBucketResource{}
 var _ resource.ResourceWithImportState = &storageBucketResource{}
 
 type storageBucketResource struct {
-	client *client.Client
+	resourceBase
 }
 
 type storageBucketResourceModel struct {
@@ -89,18 +89,6 @@ func (r *storageBucketResource) Schema(_ context.Context, _ resource.SchemaReque
 	}
 }
 
-func (r *storageBucketResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	r.client = apiClient
-}
-
 func (r *storageBucketResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan storageBucketResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -109,7 +97,7 @@ func (r *storageBucketResource) Create(ctx context.Context, req resource.CreateR
 	}
 	bucket, err := r.client.CreateStorageBucket(ctx, storageBucketInput(plan))
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Storage Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Storage Bucket", err)
 		return
 	}
 	setStorageBucketState(&plan, bucket)
@@ -122,18 +110,12 @@ func (r *storageBucketResource) Read(ctx context.Context, req resource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Storage Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Storage Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	bucket, err := r.client.GetStorageBucket(ctx, id)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Storage Bucket Failed", err.Error())
+	if handleReadError(ctx, err, "Storage Bucket", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setStorageBucketState(&state, bucket)
@@ -148,14 +130,13 @@ func (r *storageBucketResource) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Storage Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Storage Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	bucket, err := r.client.UpdateStorageBucket(ctx, id, storageBucketInput(plan))
 	if err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Storage Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Storage Bucket", err)
 		return
 	}
 	setStorageBucketState(&plan, bucket)
@@ -168,13 +149,12 @@ func (r *storageBucketResource) Delete(ctx context.Context, req resource.DeleteR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Storage Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Storage Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if err := r.client.DeleteStorageBucket(ctx, id, false); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Storage Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Storage Bucket", err)
 	}
 }
 

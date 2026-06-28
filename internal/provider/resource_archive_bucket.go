@@ -21,7 +21,7 @@ var _ resource.ResourceWithConfigure = &archiveBucketResource{}
 var _ resource.ResourceWithImportState = &archiveBucketResource{}
 
 type archiveBucketResource struct {
-	client *client.Client
+	resourceBase
 }
 
 type archiveBucketResourceModel struct {
@@ -73,18 +73,6 @@ func (r *archiveBucketResource) Schema(_ context.Context, _ resource.SchemaReque
 	}
 }
 
-func (r *archiveBucketResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	r.client = apiClient
-}
-
 func (r *archiveBucketResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan archiveBucketResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -98,7 +86,7 @@ func (r *archiveBucketResource) Create(ctx context.Context, req resource.CreateR
 	}
 	bucket, err := r.client.CreateArchiveBucket(ctx, archiveBucketInput(plan, provider.ID))
 	if err != nil {
-		resp.Diagnostics.AddError("Create MTN Cloud Archive Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Create", "Archive Bucket", err)
 		return
 	}
 	setArchiveBucketState(&plan, bucket)
@@ -111,18 +99,12 @@ func (r *archiveBucketResource) Read(ctx context.Context, req resource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Archive Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Archive Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	bucket, err := r.client.GetArchiveBucket(ctx, id)
-	if client.IsNotFound(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("Read MTN Cloud Archive Bucket Failed", err.Error())
+	if handleReadError(ctx, err, "Archive Bucket", &resp.State, &resp.Diagnostics) {
 		return
 	}
 	setArchiveBucketState(&state, bucket)
@@ -137,14 +119,13 @@ func (r *archiveBucketResource) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Archive Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Archive Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	bucket, err := r.client.UpdateArchiveBucket(ctx, id, archiveBucketInput(plan, 0))
 	if err != nil {
-		resp.Diagnostics.AddError("Update MTN Cloud Archive Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Update", "Archive Bucket", err)
 		return
 	}
 	setArchiveBucketState(&plan, bucket)
@@ -157,13 +138,12 @@ func (r *archiveBucketResource) Delete(ctx context.Context, req resource.DeleteR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid Archive Bucket ID", err.Error())
+	id, ok := parseID(state.ID, "Archive Bucket", &resp.Diagnostics)
+	if !ok {
 		return
 	}
 	if err := r.client.DeleteArchiveBucket(ctx, id); err != nil && !client.IsNotFound(err) {
-		resp.Diagnostics.AddError("Delete MTN Cloud Archive Bucket Failed", err.Error())
+		opError(&resp.Diagnostics, "Delete", "Archive Bucket", err)
 	}
 }
 

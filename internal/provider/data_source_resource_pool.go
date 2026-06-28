@@ -7,15 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &resourcePoolDataSource{}
 var _ datasource.DataSourceWithConfigure = &resourcePoolDataSource{}
 
 type resourcePoolDataSource struct {
-	client *client.Client
+	dataSourceBase
 }
 
 type resourcePoolDataSourceModel struct {
@@ -43,18 +41,6 @@ func (d *resourcePoolDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 			"code":  dschema.StringAttribute{Computed: true, Description: "Code of the resource pool (e.g. `pool-123`)."},
 		},
 	}
-}
-
-func (d *resourcePoolDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-	apiClient, ok := configuredClient(req.ProviderData)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
-		return
-	}
-	d.client = apiClient
 }
 
 func (d *resourcePoolDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
