@@ -60,6 +60,9 @@ signs:
       - "${artifact}"
 
 release:
+  # Replace any existing assets on re-release so a re-run never leaves a stale
+  # SHA256SUMS alongside freshly-built zips (which breaks registry ingestion).
+  mode: replace
   extra_files:
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
