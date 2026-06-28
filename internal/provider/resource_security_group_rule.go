@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &securityGroupRuleResource{}
@@ -57,51 +57,61 @@ func (r *securityGroupRuleResource) Schema(_ context.Context, _ resource.SchemaR
 	resp.Schema = rschema.Schema{
 		Description: "Manages a rule in an MTN Cloud security group.",
 		Attributes: map[string]rschema.Attribute{
-			"id": rschema.StringAttribute{Computed: true},
+			"id": rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the rule."},
 			"security_group_id": rschema.StringAttribute{
 				Required:      true,
+				Description:   "ID of the security group this rule belongs to. Changing it forces a new rule.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
-			"name": rschema.StringAttribute{Optional: true},
+			"name": rschema.StringAttribute{Optional: true, Description: "Human-readable name for the rule."},
 			"direction": rschema.StringAttribute{
 				Optional: true, Computed: true, Default: stringdefault.StaticString("ingress"),
-				Validators: []validator.String{stringvalidator.OneOf("ingress", "egress")},
+				Description: "Traffic direction the rule applies to: `ingress` or `egress`. Defaults to `ingress`.",
+				Validators:  []validator.String{stringvalidator.OneOf("ingress", "egress")},
 			},
 			"policy": rschema.StringAttribute{
 				Optional: true, Computed: true, Default: stringdefault.StaticString("accept"),
-				Validators: []validator.String{stringvalidator.OneOf("accept", "deny")},
+				Description: "Action for matching traffic: `accept` or `deny`. Defaults to `accept`.",
+				Validators:  []validator.String{stringvalidator.OneOf("accept", "deny")},
 			},
 			"protocol": rschema.StringAttribute{
-				Optional:   true,
-				Validators: []validator.String{stringvalidator.OneOf("tcp", "udp", "icmp", "any")},
+				Optional:    true,
+				Description: "IP protocol the rule matches: `tcp`, `udp`, `icmp`, or `any`.",
+				Validators:  []validator.String{stringvalidator.OneOf("tcp", "udp", "icmp", "any")},
 			},
 			"port_range": rschema.StringAttribute{
-				Optional:   true,
-				Validators: []validator.String{validPortRange()},
+				Optional:    true,
+				Description: "Source port or range, e.g. `22` or `8000-9000` (0-65535).",
+				Validators:  []validator.String{validPortRange()},
 			},
 			"destination_port_range": rschema.StringAttribute{
-				Optional:   true,
-				Validators: []validator.String{validPortRange()},
+				Optional:    true,
+				Description: "Destination port or range, e.g. `443` or `8000-9000` (0-65535).",
+				Validators:  []validator.String{validPortRange()},
 			},
 			"source_type": rschema.StringAttribute{
 				Optional: true, Computed: true, Default: stringdefault.StaticString("all"),
-				Validators: []validator.String{stringvalidator.OneOf("cidr", "group", "instance", "all")},
+				Description: "How `source` is interpreted: `cidr`, `group`, `instance`, or `all`. Defaults to `all`.",
+				Validators:  []validator.String{stringvalidator.OneOf("cidr", "group", "instance", "all")},
 			},
-			"source": rschema.StringAttribute{Optional: true},
+			"source": rschema.StringAttribute{Optional: true, Description: "Source matched by the rule; meaning depends on `source_type` (e.g. a CIDR like `203.0.113.0/24`)."},
 			"destination_type": rschema.StringAttribute{
 				Optional: true, Computed: true, Default: stringdefault.StaticString("instance"),
-				Validators: []validator.String{stringvalidator.OneOf("cidr", "group", "instance", "all")},
+				Description: "How `destination` is interpreted: `cidr`, `group`, `instance`, or `all`. Defaults to `instance`.",
+				Validators:  []validator.String{stringvalidator.OneOf("cidr", "group", "instance", "all")},
 			},
-			"destination": rschema.StringAttribute{Optional: true},
+			"destination": rschema.StringAttribute{Optional: true, Description: "Destination matched by the rule; meaning depends on `destination_type`."},
 			"ethertype": rschema.StringAttribute{
-				Optional:   true,
-				Validators: []validator.String{stringvalidator.OneOf("IPv4", "IPv6")},
+				Optional:    true,
+				Description: "Ethernet frame type: `IPv4` or `IPv6`.",
+				Validators:  []validator.String{stringvalidator.OneOf("IPv4", "IPv6")},
 			},
 			"priority": rschema.Int64Attribute{
-				Optional:   true,
-				Validators: []validator.Int64{int64validator.AtLeast(0)},
+				Optional:    true,
+				Description: "Rule evaluation priority; lower values are evaluated first. Must be >= 0.",
+				Validators:  []validator.Int64{int64validator.AtLeast(0)},
 			},
-			"enabled": rschema.BoolAttribute{Optional: true},
+			"enabled": rschema.BoolAttribute{Optional: true, Description: "Whether the rule is active."},
 		},
 	}
 }

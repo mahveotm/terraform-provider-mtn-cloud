@@ -1,6 +1,6 @@
-BINARY=terraform-provider-mtn-cloud
+BINARY=terraform-provider-mtncloud
 
-.PHONY: build test testacc fmt vet lint tidy check install-local docs
+.PHONY: build test testacc fmt vet lint tidy check install-local docs docs-check
 
 build:
 	go build -o $(BINARY) .
@@ -32,8 +32,13 @@ check: build vet lint test
 	@gofmt -l . | (! grep .) || (echo "Run 'make fmt'"; exit 1)
 
 install-local: build
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/mahveotm/mtn-cloud/0.1.0/$$(go env GOOS)_$$(go env GOARCH)
-	cp $(BINARY) ~/.terraform.d/plugins/registry.terraform.io/mahveotm/mtn-cloud/0.1.0/$$(go env GOOS)_$$(go env GOARCH)/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/mahveotm/mtncloud/0.1.0/$$(go env GOOS)_$$(go env GOARCH)
+	cp $(BINARY) ~/.terraform.d/plugins/registry.terraform.io/mahveotm/mtncloud/0.1.0/$$(go env GOOS)_$$(go env GOARCH)/
 
+# Regenerate docs/ from schema descriptions + examples/ via tfplugindocs.
 docs:
-	@echo "Docs are maintained manually in docs/ for this MVP."
+	go generate ./...
+
+# Verify docs/ is current with the schema (use in CI so stale docs fail the build).
+docs-check: docs
+	@git diff --exit-code -- docs/ || (echo "docs/ is stale — run 'make docs' and commit"; exit 1)

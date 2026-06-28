@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &networkResource{}
@@ -72,47 +72,50 @@ func (r *networkResource) Schema(ctx context.Context, _ resource.SchemaRequest, 
 	resp.Schema = rschema.Schema{
 		Description: "Manages an MTN Cloud network using human-friendly group/zone/type/pool names.",
 		Attributes: map[string]rschema.Attribute{
-			"id":            rschema.StringAttribute{Computed: true},
-			"name":          rschema.StringAttribute{Required: true},
-			"group":         rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Group/site name. Defaults to the provider's `group`. The group's first cloud is used as the network's zone (see cloud_id)."},
-			"type":          rschema.StringAttribute{Optional: true, PlanModifiers: replaceString, Description: "Network type name or code (e.g. an OpenStack network type)."},
-			"resource_pool": rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Resource pool name or code. Defaults to the provider's `resource_pool`. Required for OpenStack networks."},
-			"description":   rschema.StringAttribute{Optional: true},
+			"id":            rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the network."},
+			"name":          rschema.StringAttribute{Required: true, Description: "Name of the network."},
+			"group":         rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Group/site name. Defaults to the provider's `group`. The group's first cloud is used as the network's zone (see cloud_id). Changing it forces a new network."},
+			"type":          rschema.StringAttribute{Optional: true, PlanModifiers: replaceString, Description: "Network type name or code (e.g. an OpenStack network type). Changing it forces a new network."},
+			"resource_pool": rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Resource pool name or code. Defaults to the provider's `resource_pool`. Required for OpenStack networks. Changing it forces a new network."},
+			"description":   rschema.StringAttribute{Optional: true, Description: "Human-readable description of the network."},
 			"cidr": rschema.StringAttribute{
-				Optional:   true,
-				Validators: []validator.String{validCIDR()},
+				Optional:    true,
+				Description: "CIDR block for the network, e.g. `10.0.0.0/24`.",
+				Validators:  []validator.String{validCIDR()},
 			},
-			"gateway":       rschema.StringAttribute{Optional: true},
-			"dns_primary":   rschema.StringAttribute{Optional: true},
-			"dns_secondary": rschema.StringAttribute{Optional: true},
+			"gateway":       rschema.StringAttribute{Optional: true, Description: "Gateway IP address for the network."},
+			"dns_primary":   rschema.StringAttribute{Optional: true, Description: "Primary DNS server for the network."},
+			"dns_secondary": rschema.StringAttribute{Optional: true, Description: "Secondary DNS server for the network."},
 			"vlan_id": rschema.Int64Attribute{
-				Optional:   true,
-				Validators: []validator.Int64{int64validator.Between(1, 4094)},
+				Optional:    true,
+				Description: "VLAN ID for the network (1-4094).",
+				Validators:  []validator.Int64{int64validator.Between(1, 4094)},
 			},
-			"dhcp_server":           rschema.BoolAttribute{Optional: true},
-			"assign_public_ip":      rschema.BoolAttribute{Optional: true},
-			"allow_static_override": rschema.BoolAttribute{Optional: true},
-			"active":                rschema.BoolAttribute{Optional: true},
+			"dhcp_server":           rschema.BoolAttribute{Optional: true, Description: "Whether DHCP is enabled on the network."},
+			"assign_public_ip":      rschema.BoolAttribute{Optional: true, Description: "Whether instances on this network are assigned a public IP."},
+			"allow_static_override": rschema.BoolAttribute{Optional: true, Description: "Whether static IP assignment may override DHCP."},
+			"active":                rschema.BoolAttribute{Optional: true, Description: "Whether the network is active."},
 			"visibility": rschema.StringAttribute{
 				Optional:    true,
-				Description: "Network visibility: 'private' or 'public'.",
+				Description: "Network visibility: `private` or `public`.",
 				Validators:  []validator.String{stringvalidator.OneOf("private", "public")},
 			},
 			"labels": rschema.ListAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
+				Description: "Labels applied to the network. Merged with the provider's default_labels into `labels_all`.",
 			},
 			"labels_all": rschema.ListAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
 				Description: "Effective labels: the provider's default_labels merged (union) with `labels`.",
 			},
-			"code":             rschema.StringAttribute{Computed: true},
-			"status":           rschema.StringAttribute{Computed: true},
-			"cloud_id":         rschema.Int64Attribute{Computed: true},
-			"group_id":         rschema.Int64Attribute{Computed: true},
-			"type_id":          rschema.Int64Attribute{Computed: true},
-			"resource_pool_id": rschema.Int64Attribute{Computed: true},
+			"code":             rschema.StringAttribute{Computed: true, Description: "Code of the network."},
+			"status":           rschema.StringAttribute{Computed: true, Description: "Current status of the network."},
+			"cloud_id":         rschema.Int64Attribute{Computed: true, Description: "ID of the cloud/zone the network was created in (the group's first cloud)."},
+			"group_id":         rschema.Int64Attribute{Computed: true, Description: "Resolved numeric ID of the group."},
+			"type_id":          rschema.Int64Attribute{Computed: true, Description: "Resolved numeric ID of the network type."},
+			"resource_pool_id": rschema.Int64Attribute{Computed: true, Description: "Resolved numeric ID of the resource pool."},
 		},
 		Blocks: map[string]rschema.Block{
 			"timeouts": timeouts.Block(ctx, timeouts.Opts{

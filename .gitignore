@@ -1,5 +1,5 @@
 # Compiled provider binary
-terraform-provider-mtn-cloud
+terraform-provider-mtncloud
 dist/
 
 # Go build & test artifacts

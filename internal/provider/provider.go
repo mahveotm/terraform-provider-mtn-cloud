@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ provider.Provider = &mtnCloudProvider{}
@@ -64,6 +64,10 @@ func (p *mtnCloudProvider) Metadata(_ context.Context, _ provider.MetadataReques
 
 func (p *mtnCloudProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = pschema.Schema{
+		Description: "The MTN Cloud provider manages MTN Cloud (Morpheus-based) infrastructure: " +
+			"compute instances, networks, security groups, and storage/archive buckets. " +
+			"Configure it with an API token or username/password, and optionally set a " +
+			"default group, resource pool, and tags/labels that resources inherit.",
 		Attributes: map[string]pschema.Attribute{
 			"url": pschema.StringAttribute{
 				Optional:    true,

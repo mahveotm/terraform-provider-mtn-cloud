@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &groupDataSource{}
@@ -38,14 +38,15 @@ func (d *groupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud group/site by name.",
 		Attributes: map[string]dschema.Attribute{
-			"id":   dschema.StringAttribute{Computed: true},
-			"name": dschema.StringAttribute{Required: true},
+			"id":   dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the group."},
+			"name": dschema.StringAttribute{Required: true, Description: "Name of the group/site to look up."},
 			"cloud_ids": dschema.ListAttribute{
 				Computed:    true,
 				ElementType: types.Int64Type,
+				Description: "IDs of the clouds/zones attached to this group.",
 			},
-			"location": dschema.StringAttribute{Computed: true},
-			"active":   dschema.BoolAttribute{Computed: true},
+			"location": dschema.StringAttribute{Computed: true, Description: "Location of the group."},
+			"active":   dschema.BoolAttribute{Computed: true, Description: "Whether the group is active."},
 		},
 	}
 }

@@ -8,7 +8,7 @@ import (
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &securityGroupResource{}
@@ -39,11 +39,11 @@ func (r *securityGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 	resp.Schema = rschema.Schema{
 		Description: "Manages an MTN Cloud security group.",
 		Attributes: map[string]rschema.Attribute{
-			"id":          rschema.StringAttribute{Computed: true},
-			"name":        rschema.StringAttribute{Required: true},
-			"description": rschema.StringAttribute{Optional: true},
-			"active":      rschema.BoolAttribute{Computed: true},
-			"enabled":     rschema.BoolAttribute{Computed: true},
+			"id":          rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the security group."},
+			"name":        rschema.StringAttribute{Required: true, Description: "Name of the security group."},
+			"description": rschema.StringAttribute{Optional: true, Description: "Human-readable description of the security group."},
+			"active":      rschema.BoolAttribute{Computed: true, Description: "Whether the security group is active."},
+			"enabled":     rschema.BoolAttribute{Computed: true, Description: "Whether the security group is enabled."},
 		},
 	}
 }

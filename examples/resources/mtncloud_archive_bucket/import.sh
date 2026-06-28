@@ -1,0 +1,1 @@
+terraform import mtncloud_archive_bucket.vault 12

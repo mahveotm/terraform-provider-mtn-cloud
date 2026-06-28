@@ -58,3 +58,17 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: go test -race -coverprofile=coverage.out ./...
+
+  docs:
+    name: Docs up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Regenerate docs and check for drift
+        run: |
+          go generate ./...
+          git diff --exit-code -- docs/ || (echo "::error::docs/ is stale — run 'make docs' and commit"; exit 1)

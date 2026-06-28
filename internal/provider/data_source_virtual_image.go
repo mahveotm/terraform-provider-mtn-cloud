@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &virtualImageDataSource{}
@@ -39,12 +39,12 @@ func (d *virtualImageDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud virtual image by name.",
 		Attributes: map[string]dschema.Attribute{
-			"id":         dschema.StringAttribute{Computed: true},
-			"name":       dschema.StringAttribute{Required: true},
-			"code":       dschema.StringAttribute{Computed: true},
-			"image_type": dschema.StringAttribute{Computed: true},
-			"os":         dschema.StringAttribute{Computed: true},
-			"is_public":  dschema.BoolAttribute{Computed: true},
+			"id":         dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the virtual image."},
+			"name":       dschema.StringAttribute{Required: true, Description: "Name of the virtual image to look up (e.g. `Ubuntu 24.04 LTS`)."},
+			"code":       dschema.StringAttribute{Computed: true, Description: "Code of the virtual image."},
+			"image_type": dschema.StringAttribute{Computed: true, Description: "Image format/type (e.g. `qcow2`)."},
+			"os":         dschema.StringAttribute{Computed: true, Description: "Operating system the image provides."},
+			"is_public":  dschema.BoolAttribute{Computed: true, Description: "Whether the image is publicly available."},
 		},
 	}
 }

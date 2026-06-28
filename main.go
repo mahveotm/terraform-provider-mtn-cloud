@@ -7,8 +7,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/provider"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/provider"
 )
+
+// Generate provider documentation under docs/ from the schema descriptions and
+// the examples/ directory. Run with `go generate ./...` or `make docs`.
+//go:generate go tool tfplugindocs generate --provider-name mtncloud
 
 var version = "dev"
 
@@ -18,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/mahveotm/mtn-cloud",
+		Address: "registry.terraform.io/mahveotm/mtncloud",
 		Debug:   debug,
 	}
 

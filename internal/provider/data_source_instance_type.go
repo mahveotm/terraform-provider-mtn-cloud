@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &instanceTypeDataSource{}
@@ -37,10 +37,10 @@ func (d *instanceTypeDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud instance type by code.",
 		Attributes: map[string]dschema.Attribute{
-			"id":                dschema.StringAttribute{Computed: true},
-			"name":              dschema.StringAttribute{Computed: true},
-			"code":              dschema.StringAttribute{Required: true},
-			"default_layout_id": dschema.Int64Attribute{Computed: true},
+			"id":                dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the instance type."},
+			"name":              dschema.StringAttribute{Computed: true, Description: "Display name of the instance type."},
+			"code":              dschema.StringAttribute{Required: true, Description: "Code of the instance type to look up (e.g. `MTN-CS10`)."},
+			"default_layout_id": dschema.Int64Attribute{Computed: true, Description: "ID of the instance type's default layout, used when provisioning instances."},
 		},
 	}
 }

@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &servicePlanDataSource{}
@@ -41,14 +41,14 @@ func (d *servicePlanDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud service plan by name/code for a group and instance type.",
 		Attributes: map[string]dschema.Attribute{
-			"id":          dschema.StringAttribute{Computed: true},
-			"name":        dschema.StringAttribute{Required: true},
-			"group":       dschema.StringAttribute{Required: true},
-			"type":        dschema.StringAttribute{Required: true},
-			"code":        dschema.StringAttribute{Computed: true},
-			"max_cpu":     dschema.Int64Attribute{Computed: true},
-			"max_memory":  dschema.Int64Attribute{Computed: true},
-			"max_storage": dschema.Int64Attribute{Computed: true},
+			"id":          dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the service plan."},
+			"name":        dschema.StringAttribute{Required: true, Description: "Name of the service plan to look up (e.g. `G2S4`)."},
+			"group":       dschema.StringAttribute{Required: true, Description: "Name of the group the plan is available in."},
+			"type":        dschema.StringAttribute{Required: true, Description: "Instance type code the plan applies to (e.g. `MTN-CS10`)."},
+			"code":        dschema.StringAttribute{Computed: true, Description: "Code of the service plan."},
+			"max_cpu":     dschema.Int64Attribute{Computed: true, Description: "Maximum number of vCPUs the plan provides."},
+			"max_memory":  dschema.Int64Attribute{Computed: true, Description: "Maximum memory the plan provides, in bytes."},
+			"max_storage": dschema.Int64Attribute{Computed: true, Description: "Maximum storage the plan provides, in bytes."},
 		},
 	}
 }

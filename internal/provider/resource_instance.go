@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &instanceResource{}
@@ -86,26 +86,27 @@ func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest,
 	resp.Schema = rschema.Schema{
 		Description: "Manages an MTN Cloud compute instance using human-friendly provisioning inputs.",
 		Attributes: map[string]rschema.Attribute{
-			"id":                     rschema.StringAttribute{Computed: true},
-			"name":                   rschema.StringAttribute{Required: true, PlanModifiers: replaceString},
-			"group":                  rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Group/site name. Defaults to the provider's `group`."},
-			"type":                   rschema.StringAttribute{Required: true, PlanModifiers: replaceString},
-			"plan":                   rschema.StringAttribute{Required: true},
-			"resource_pool":          rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Resource pool name/code. Defaults to the provider's `resource_pool`; if neither is set and the group has exactly one pool, that pool is used."},
-			"description":            rschema.StringAttribute{Optional: true},
-			"environment":            rschema.StringAttribute{Optional: true},
-			"availability_zone":      rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Availability zone. Defaults to the provider's `availability_zone`."},
-			"security_group":         rschema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("default")},
-			"os_external_network_id": rschema.StringAttribute{Optional: true, PlanModifiers: replaceString},
-			"create_user":            rschema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true), PlanModifiers: replaceBool},
-			"workflow_id":            rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Validators: []validator.Int64{int64validator.AtLeast(1)}},
-			"shutdown_days":          rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Validators: []validator.Int64{int64validator.AtLeast(1)}},
-			"expire_days":            rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Validators: []validator.Int64{int64validator.AtLeast(1)}},
-			"create_backup":          rschema.BoolAttribute{Optional: true, PlanModifiers: replaceBool},
-			"wait_for_ready":         rschema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true)},
+			"id":                     rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the instance."},
+			"name":                   rschema.StringAttribute{Required: true, PlanModifiers: replaceString, Description: "Name of the instance. Changing it forces a new instance."},
+			"group":                  rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Group/site name. Defaults to the provider's `group`. Changing it forces a new instance."},
+			"type":                   rschema.StringAttribute{Required: true, PlanModifiers: replaceString, Description: "Instance type code (e.g. `MTN-CS10`). Changing it forces a new instance."},
+			"plan":                   rschema.StringAttribute{Required: true, Description: "Service plan name/code (e.g. `G2S4`) sizing the instance."},
+			"resource_pool":          rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Resource pool name/code. Defaults to the provider's `resource_pool`; if neither is set and the group has exactly one pool, that pool is used. Changing it forces a new instance."},
+			"description":            rschema.StringAttribute{Optional: true, Description: "Human-readable description of the instance."},
+			"environment":            rschema.StringAttribute{Optional: true, Description: "Environment the instance belongs to (e.g. `production`)."},
+			"availability_zone":      rschema.StringAttribute{Optional: true, Computed: true, PlanModifiers: inheritString, Description: "Availability zone. Defaults to the provider's `availability_zone`. Changing it forces a new instance."},
+			"security_group":         rschema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("default"), Description: "Primary security group name. Defaults to `default`."},
+			"os_external_network_id": rschema.StringAttribute{Optional: true, PlanModifiers: replaceString, Description: "ID of the external (OpenStack) network to attach. Changing it forces a new instance."},
+			"create_user":            rschema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true), PlanModifiers: replaceBool, Description: "Whether to create a cloud-init user on provisioning. Defaults to `true`. Changing it forces a new instance."},
+			"workflow_id":            rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Description: "ID of a provisioning workflow to run at create time. Changing it forces a new instance.", Validators: []validator.Int64{int64validator.AtLeast(1)}},
+			"shutdown_days":          rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Description: "Number of days after which the instance is automatically shut down. Changing it forces a new instance.", Validators: []validator.Int64{int64validator.AtLeast(1)}},
+			"expire_days":            rschema.Int64Attribute{Optional: true, PlanModifiers: replaceInt64, Description: "Number of days after which the instance automatically expires. Changing it forces a new instance.", Validators: []validator.Int64{int64validator.AtLeast(1)}},
+			"create_backup":          rschema.BoolAttribute{Optional: true, PlanModifiers: replaceBool, Description: "Whether to enable backups at create time. Changing it forces a new instance."},
+			"wait_for_ready":         rschema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(true), Description: "Wait for the instance to reach a running state before completing. Defaults to `true`."},
 			"labels": rschema.ListAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
+				Description: "Labels applied to the instance. Merged with the provider's default_labels into `labels_all`.",
 			},
 			"labels_all": rschema.ListAttribute{
 				Computed:    true,
@@ -115,6 +116,7 @@ func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest,
 			"tags": rschema.MapAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
+				Description: "Tags applied to the instance. Merged with the provider's default_tags into `tags_all`.",
 			},
 			"tags_all": rschema.MapAttribute{
 				Computed:    true,
@@ -124,15 +126,16 @@ func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest,
 			"security_groups": rschema.ListAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
+				Description: "Additional security group names to attach to the instance.",
 			},
-			"status":           rschema.StringAttribute{Computed: true},
-			"primary_ip":       rschema.StringAttribute{Computed: true},
-			"external_ip":      rschema.StringAttribute{Computed: true},
-			"cloud_id":         rschema.Int64Attribute{Computed: true},
-			"group_id":         rschema.Int64Attribute{Computed: true},
-			"layout_id":        rschema.Int64Attribute{Computed: true},
-			"plan_id":          rschema.Int64Attribute{Computed: true},
-			"resource_pool_id": rschema.StringAttribute{Computed: true},
+			"status":           rschema.StringAttribute{Computed: true, Description: "Current status of the instance."},
+			"primary_ip":       rschema.StringAttribute{Computed: true, Description: "Primary (internal) IP address of the instance."},
+			"external_ip":      rschema.StringAttribute{Computed: true, Description: "External/public IP address of the instance, if assigned."},
+			"cloud_id":         rschema.Int64Attribute{Computed: true, Description: "ID of the cloud/zone the instance was provisioned in."},
+			"group_id":         rschema.Int64Attribute{Computed: true, Description: "Resolved numeric ID of the group."},
+			"layout_id":        rschema.Int64Attribute{Computed: true, Description: "Resolved instance type layout ID used to provision."},
+			"plan_id":          rschema.Int64Attribute{Computed: true, Description: "Resolved numeric ID of the service plan."},
+			"resource_pool_id": rschema.StringAttribute{Computed: true, Description: "Resolved resource pool ID (e.g. `pool-123`)."},
 		},
 		Blocks: map[string]rschema.Block{
 			"timeouts": timeouts.Block(ctx, timeouts.Opts{

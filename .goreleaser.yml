@@ -2,6 +2,10 @@
 # https://goreleaser.com / https://developer.hashicorp.com/terraform/registry/providers/publishing
 version: 2
 
+# Pin the published name so archive/binary names are correct regardless of the
+# local checkout directory. Must match the terraform-provider-{TYPE} convention.
+project_name: terraform-provider-mtncloud
+
 before:
   hooks:
     - go mod tidy

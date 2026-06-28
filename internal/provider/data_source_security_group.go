@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &securityGroupDataSource{}
@@ -37,10 +37,10 @@ func (d *securityGroupDataSource) Schema(_ context.Context, _ datasource.SchemaR
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud security group by name.",
 		Attributes: map[string]dschema.Attribute{
-			"id":          dschema.StringAttribute{Computed: true},
-			"name":        dschema.StringAttribute{Required: true},
-			"description": dschema.StringAttribute{Computed: true},
-			"active":      dschema.BoolAttribute{Computed: true},
+			"id":          dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the security group."},
+			"name":        dschema.StringAttribute{Required: true, Description: "Name of the security group to look up."},
+			"description": dschema.StringAttribute{Computed: true, Description: "Description of the security group."},
+			"active":      dschema.BoolAttribute{Computed: true, Description: "Whether the security group is active."},
 		},
 	}
 }

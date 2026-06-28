@@ -21,7 +21,7 @@ This provider covers the highest-value MTN Cloud workflows:
 terraform {
   required_providers {
     mtncloud = {
-      source  = "mahveotm/mtn-cloud"
+      source  = "mahveotm/mtncloud"
       version = "~> 0.1"
     }
   }
@@ -104,7 +104,7 @@ Then use the local development source address:
 terraform {
   required_providers {
     mtncloud = {
-      source  = "mahveotm/mtn-cloud"
+      source  = "mahveotm/mtncloud"
       version = "0.1.0"
     }
   }
@@ -124,5 +124,4 @@ terraform import mtncloud_archive_bucket.vault 12
 
 ## License
 
-Licensed under the [Mozilla Public License 2.0](LICENSE), the same license used
-across the HashiCorp Terraform ecosystem.
+Licensed under the [Mozilla Public License 2.0](LICENSE).

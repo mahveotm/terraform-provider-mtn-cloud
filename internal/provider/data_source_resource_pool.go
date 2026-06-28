@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &resourcePoolDataSource{}
@@ -37,10 +37,10 @@ func (d *resourcePoolDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud resource pool by name/code within a group.",
 		Attributes: map[string]dschema.Attribute{
-			"id":    dschema.StringAttribute{Computed: true},
-			"name":  dschema.StringAttribute{Required: true},
-			"group": dschema.StringAttribute{Required: true},
-			"code":  dschema.StringAttribute{Computed: true},
+			"id":    dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the resource pool."},
+			"name":  dschema.StringAttribute{Required: true, Description: "Name of the resource pool to look up."},
+			"group": dschema.StringAttribute{Required: true, Description: "Name of the group the resource pool belongs to."},
+			"code":  dschema.StringAttribute{Computed: true, Description: "Code of the resource pool (e.g. `pool-123`)."},
 		},
 	}
 }

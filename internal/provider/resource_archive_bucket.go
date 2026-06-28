@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &archiveBucketResource{}
@@ -51,23 +51,24 @@ func (r *archiveBucketResource) Schema(_ context.Context, _ resource.SchemaReque
 	resp.Schema = rschema.Schema{
 		Description: "Manages an MTN Cloud archive bucket backed by a storage provider.",
 		Attributes: map[string]rschema.Attribute{
-			"id":               rschema.StringAttribute{Computed: true},
+			"id":               rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the archive bucket."},
 			"name":             rschema.StringAttribute{Required: true, Description: "Globally unique archive bucket name."},
-			"storage_provider": rschema.StringAttribute{Required: true, PlanModifiers: replaceString, Description: "Storage bucket name that backs this archive bucket."},
-			"description":      rschema.StringAttribute{Optional: true},
+			"storage_provider": rschema.StringAttribute{Required: true, PlanModifiers: replaceString, Description: "Storage bucket name that backs this archive bucket. Changing it forces a new archive bucket."},
+			"description":      rschema.StringAttribute{Optional: true, Description: "Human-readable description of the archive bucket."},
 			"visibility": rschema.StringAttribute{
 				Optional: true, Computed: true,
-				Description: "Archive bucket visibility: 'private' or 'public'.",
+				Description: "Archive bucket visibility: `private` or `public`.",
 				Validators:  []validator.String{stringvalidator.OneOf("private", "public")},
 			},
-			"is_public": rschema.BoolAttribute{Optional: true, Computed: true},
+			"is_public": rschema.BoolAttribute{Optional: true, Computed: true, Description: "Whether the archive bucket is publicly accessible."},
 			"account_id": rschema.Int64Attribute{
-				Optional:   true,
-				Validators: []validator.Int64{int64validator.AtLeast(1)},
+				Optional:    true,
+				Description: "ID of the account that owns the archive bucket.",
+				Validators:  []validator.Int64{int64validator.AtLeast(1)},
 			},
-			"code":       rschema.StringAttribute{Computed: true},
-			"file_count": rschema.Int64Attribute{Computed: true},
-			"raw_size":   rschema.Int64Attribute{Computed: true},
+			"code":       rschema.StringAttribute{Computed: true, Description: "Code of the archive bucket."},
+			"file_count": rschema.Int64Attribute{Computed: true, Description: "Number of files stored in the archive bucket."},
+			"raw_size":   rschema.Int64Attribute{Computed: true, Description: "Total raw size of the archive bucket's contents, in bytes."},
 		},
 	}
 }

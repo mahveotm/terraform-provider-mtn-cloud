@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ resource.Resource = &storageBucketResource{}
@@ -53,36 +53,38 @@ func (r *storageBucketResource) Schema(_ context.Context, _ resource.SchemaReque
 	resp.Schema = rschema.Schema{
 		Description: "Manages an MTN Cloud S3-compatible storage bucket.",
 		Attributes: map[string]rschema.Attribute{
-			"id":          rschema.StringAttribute{Computed: true},
+			"id":          rschema.StringAttribute{Computed: true, Description: "Numeric identifier of the storage bucket."},
 			"name":        rschema.StringAttribute{Required: true, Description: "Unique storage bucket name in MTN Cloud."},
 			"bucket_name": rschema.StringAttribute{Required: true, Description: "Backing S3 bucket name."},
-			"access_key":  rschema.StringAttribute{Required: true, Sensitive: true},
+			"access_key":  rschema.StringAttribute{Required: true, Sensitive: true, Description: "S3 access key."},
 			"secret_key":  rschema.StringAttribute{Required: true, Sensitive: true, Description: "S3 secret key. The API never returns it, so changes here are applied but drift cannot be detected."},
 			"endpoint":    rschema.StringAttribute{Required: true, Description: "S3-compatible endpoint URL."},
 			"storage_server": rschema.Int64Attribute{
-				Optional:   true,
-				Validators: []validator.Int64{int64validator.AtLeast(1)},
+				Optional:    true,
+				Description: "ID of the storage server backing this bucket.",
+				Validators:  []validator.Int64{int64validator.AtLeast(1)},
 			},
 			"create_bucket": rschema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
-				Description: "Create the backing bucket if it does not exist.",
+				Description: "Create the backing bucket if it does not exist. Defaults to `true`.",
 			},
-			"default_backup_target":        rschema.BoolAttribute{Optional: true, Computed: true},
-			"copy_to_store":                rschema.BoolAttribute{Optional: true, Computed: true},
-			"default_deployment_target":    rschema.BoolAttribute{Optional: true, Computed: true},
-			"default_virtual_image_target": rschema.BoolAttribute{Optional: true, Computed: true},
+			"default_backup_target":        rschema.BoolAttribute{Optional: true, Computed: true, Description: "Use this bucket as the default backup target."},
+			"copy_to_store":                rschema.BoolAttribute{Optional: true, Computed: true, Description: "Copy backups to this store."},
+			"default_deployment_target":    rschema.BoolAttribute{Optional: true, Computed: true, Description: "Use this bucket as the default deployment target."},
+			"default_virtual_image_target": rschema.BoolAttribute{Optional: true, Computed: true, Description: "Use this bucket as the default virtual image target."},
 			"retention_policy_type": rschema.StringAttribute{
 				Optional: true, Computed: true,
-				Description: "Cleanup mode: 'none', 'backup', or 'delete'.",
+				Description: "Cleanup mode: `none`, `backup`, or `delete`.",
 				Validators:  []validator.String{stringvalidator.OneOf("none", "backup", "delete")},
 			},
 			"retention_policy_days": rschema.Int64Attribute{
 				Optional: true, Computed: true,
-				Validators: []validator.Int64{int64validator.AtLeast(1)},
+				Description: "Number of days to retain objects before the retention policy applies. Must be >= 1.",
+				Validators:  []validator.Int64{int64validator.AtLeast(1)},
 			},
-			"retention_provider": rschema.StringAttribute{Optional: true, Computed: true},
+			"retention_provider": rschema.StringAttribute{Optional: true, Computed: true, Description: "Provider used to enforce the retention policy."},
 		},
 	}
 }

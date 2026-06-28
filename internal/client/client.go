@@ -188,7 +188,7 @@ func (c *Client) do(ctx context.Context, method, path string, query map[string]s
 			return err
 		}
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "terraform-provider-mtn-cloud")
+		req.Header.Set("User-Agent", "terraform-provider-mtncloud")
 		req.Header.Set("Authorization", "Bearer "+c.token)
 		if payloadBytes != nil {
 			req.Header.Set("Content-Type", "application/json")

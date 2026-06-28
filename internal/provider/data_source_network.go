@@ -8,7 +8,7 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
 
 var _ datasource.DataSource = &networkDataSource{}
@@ -41,13 +41,13 @@ func (d *networkDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 	resp.Schema = dschema.Schema{
 		Description: "Looks up an MTN Cloud network by name.",
 		Attributes: map[string]dschema.Attribute{
-			"id":       dschema.StringAttribute{Computed: true},
-			"name":     dschema.StringAttribute{Required: true},
-			"code":     dschema.StringAttribute{Computed: true},
-			"cidr":     dschema.StringAttribute{Computed: true},
-			"gateway":  dschema.StringAttribute{Computed: true},
-			"status":   dschema.StringAttribute{Computed: true},
-			"type_id":  dschema.Int64Attribute{Computed: true},
+			"id":       dschema.StringAttribute{Computed: true, Description: "Numeric identifier of the network."},
+			"name":     dschema.StringAttribute{Required: true, Description: "Name of the network to look up."},
+			"code":     dschema.StringAttribute{Computed: true, Description: "Code of the network."},
+			"cidr":     dschema.StringAttribute{Computed: true, Description: "CIDR block of the network."},
+			"gateway":  dschema.StringAttribute{Computed: true, Description: "Gateway address of the network."},
+			"status":   dschema.StringAttribute{Computed: true, Description: "Current status of the network."},
+			"type_id":  dschema.Int64Attribute{Computed: true, Description: "ID of the network type."},
 			"cloud_id": dschema.Int64Attribute{Optional: true, Computed: true, Description: "Cloud/zone ID to disambiguate networks with the same name. Get it from mtncloud_group.cloud_ids."},
 		},
 	}
