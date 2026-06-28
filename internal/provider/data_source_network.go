@@ -1,0 +1,95 @@
+package provider
+
+import (
+	"context"
+	"strconv"
+
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/mahveotm/terraform-provider-mtn-cloud/internal/client"
+)
+
+var _ datasource.DataSource = &networkDataSource{}
+var _ datasource.DataSourceWithConfigure = &networkDataSource{}
+
+type networkDataSource struct {
+	client *client.Client
+}
+
+type networkDataSourceModel struct {
+	ID      types.String `tfsdk:"id"`
+	Name    types.String `tfsdk:"name"`
+	Code    types.String `tfsdk:"code"`
+	CIDR    types.String `tfsdk:"cidr"`
+	Gateway types.String `tfsdk:"gateway"`
+	Status  types.String `tfsdk:"status"`
+	TypeID  types.Int64  `tfsdk:"type_id"`
+	CloudID types.Int64  `tfsdk:"cloud_id"`
+}
+
+func NewNetworkDataSource() datasource.DataSource {
+	return &networkDataSource{}
+}
+
+func (d *networkDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_network"
+}
+
+func (d *networkDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = dschema.Schema{
+		Description: "Looks up an MTN Cloud network by name.",
+		Attributes: map[string]dschema.Attribute{
+			"id":       dschema.StringAttribute{Computed: true},
+			"name":     dschema.StringAttribute{Required: true},
+			"code":     dschema.StringAttribute{Computed: true},
+			"cidr":     dschema.StringAttribute{Computed: true},
+			"gateway":  dschema.StringAttribute{Computed: true},
+			"status":   dschema.StringAttribute{Computed: true},
+			"type_id":  dschema.Int64Attribute{Computed: true},
+			"cloud_id": dschema.Int64Attribute{Optional: true, Computed: true, Description: "Cloud/zone ID to disambiguate networks with the same name. Get it from mtncloud_group.cloud_ids."},
+		},
+	}
+}
+
+func (d *networkDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+	apiClient, ok := configuredClient(req.ProviderData)
+	if !ok {
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *client.Client.")
+		return
+	}
+	d.client = apiClient
+}
+
+func (d *networkDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data networkDataSourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var zoneID int64
+	if !data.CloudID.IsNull() && !data.CloudID.IsUnknown() {
+		zoneID = data.CloudID.ValueInt64()
+	}
+
+	network, err := d.client.GetNetworkByName(ctx, data.Name.ValueString(), zoneID)
+	if err != nil {
+		resp.Diagnostics.AddError("Read MTN Cloud Network Failed", err.Error())
+		return
+	}
+
+	data.ID = types.StringValue(strconv.FormatInt(network.ID, 10))
+	data.Code = optionalString(network.Code)
+	data.CIDR = optionalString(network.CIDR)
+	data.Gateway = optionalString(network.Gateway)
+	data.Status = optionalString(network.Status)
+	data.TypeID = int64ValueOrNull(nestedID(network.Type))
+	data.CloudID = int64ValueOrNull(nestedID(network.Zone))
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
