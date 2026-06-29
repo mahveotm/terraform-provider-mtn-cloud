@@ -11,9 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Documentation generation now works in CI environments without a preinstalled
-  Terraform CLI by installing the pinned Terraform version through the docs
-  schema helper.
+- Restored the standard `tfplugindocs` generation path and removed the
+  unnecessary custom docs-generation wrapper.
 
 ## [0.2.8] - 2026-06-29
 
@@ -29,12 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with unit tests covering payload shapes and the job `scheduleMode` encoding.
 - Generated documentation, examples, sweepers, and acceptance tests (including a
   rename guard that asserts name changes update in place rather than recreate).
-
-### Fixed
-
-- Documentation generation now uses the provider's published
-  `mahveotm/mtncloud` namespace instead of relying on the `tfplugindocs`
-  default HashiCorp namespace.
 
 ## [0.2.7] - 2026-06-29
 

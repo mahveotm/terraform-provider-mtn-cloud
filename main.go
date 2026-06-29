@@ -12,7 +12,7 @@ import (
 
 // Generate provider documentation under docs/ from the schema descriptions and
 // the examples/ directory. Run with `go generate ./...` or `make docs`.
-//go:generate ./scripts/generate-docs.sh
+//go:generate go tool tfplugindocs generate --provider-name mtncloud
 
 var version = "dev"
 
