@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-06-29
+
+### Fixed
+
+- Documentation generation now works in CI environments without a preinstalled
+  Terraform CLI by installing the pinned Terraform version through the docs
+  schema helper.
+
 ## [0.2.8] - 2026-06-29
 
 ### Added
@@ -87,7 +95,8 @@ Initial release of the MTN Cloud Terraform provider.
   network errors on GETs only) honoring `Retry-After`.
 - Import support for all resources via `terraform import`.
 
-[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.8...HEAD
+[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.9...HEAD
+[0.2.9]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.1.0...v0.2.7
 [0.1.0]: https://github.com/mahveotm/terraform-provider-mtncloud/releases/tag/v0.1.0
