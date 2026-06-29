@@ -29,3 +29,23 @@ resource "mtncloud_task" "notify" {
   email_address = "ops@example.com"
   subject       = "Deployment finished"
 }
+
+# Write-attributes task: set custom attributes on the target during a workflow.
+# `attributes` is a JSON object string; if the WAF rejects the JSON body, have it
+# allow the payload.
+resource "mtncloud_task" "tag" {
+  name       = "tag-environment"
+  type       = "write_attributes"
+  attributes = jsonencode({ environment = "production" })
+}
+
+# Nested-workflow task: run an existing operational workflow as a task.
+data "mtncloud_workflow" "ops" {
+  name = "operational-maintenance"
+}
+
+resource "mtncloud_task" "run_ops" {
+  name                    = "run-ops-workflow"
+  type                    = "nested_workflow"
+  operational_workflow_id = data.mtncloud_workflow.ops.id
+}

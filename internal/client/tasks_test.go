@@ -122,6 +122,58 @@ func TestCreateEmailTaskPayload(t *testing.T) {
 	}
 }
 
+func TestCreateWriteAttributesTaskPayload(t *testing.T) {
+	t.Parallel()
+	var task map[string]any
+	server := taskServer(t, &task)
+	defer server.Close()
+
+	if _, err := newTaskClient(t, server.URL).CreateTask(context.Background(), TaskInput{
+		Type:       "write_attributes",
+		Name:       "tag-instance",
+		Attributes: `{"env":"prod"}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if task["taskType"].(map[string]any)["code"] != "writeAttributes" {
+		t.Fatalf("expected taskType.code=writeAttributes, got %#v", task["taskType"])
+	}
+	if _, ok := task["file"]; ok {
+		t.Fatalf("write_attributes task should not send a file block: %#v", task["file"])
+	}
+	opts := task["taskOptions"].(map[string]any)
+	if opts["writeAttributes.attributes"] != `{"env":"prod"}` {
+		t.Fatalf("unexpected write attributes options: %#v", opts)
+	}
+}
+
+func TestCreateNestedWorkflowTaskPayload(t *testing.T) {
+	t.Parallel()
+	var task map[string]any
+	server := taskServer(t, &task)
+	defer server.Close()
+
+	if _, err := newTaskClient(t, server.URL).CreateTask(context.Background(), TaskInput{
+		Type:                  "nested_workflow",
+		Name:                  "run-ops",
+		OperationalWorkflowID: int64ref(42),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if task["taskType"].(map[string]any)["code"] != "nestedWorkflow" {
+		t.Fatalf("expected taskType.code=nestedWorkflow, got %#v", task["taskType"])
+	}
+	opts := task["taskOptions"].(map[string]any)
+	// JSON numbers decode to float64.
+	if opts["operationalWorkflowId"].(float64) != 42 {
+		t.Fatalf("unexpected nested workflow options: %#v", opts)
+	}
+}
+
+func int64ref(v int64) *int64 { return &v }
+
 func TestTaskTypeRoundTrip(t *testing.T) {
 	t.Parallel()
 	for _, friendly := range TaskTypes {

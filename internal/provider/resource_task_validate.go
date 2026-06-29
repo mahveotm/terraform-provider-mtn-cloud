@@ -73,6 +73,9 @@ func (r *taskResource) ValidateConfig(ctx context.Context, req resource.Validate
 		{"email_address", cfg.EmailAddress, []string{"email"}},
 		{"subject", cfg.Subject, []string{"email"}},
 		{"skip_wrapped_template", cfg.SkipWrappedTemplate, []string{"email"}},
+		{"attributes", cfg.Attributes, []string{"write_attributes"}},
+		{"operational_workflow_id", cfg.OperationalWorkflowID, []string{"nested_workflow"}},
+		{"operational_workflow_name", cfg.OperationalWorkflowName, []string{"nested_workflow"}},
 	}
 	for _, a := range specific {
 		if attrPresent(a.value) && !containsStr(a.allowed, tt) {
@@ -95,6 +98,13 @@ func (r *taskResource) ValidateConfig(ctx context.Context, req resource.Validate
 		require("email_address", cfg.EmailAddress)
 	case "ansible":
 		require("playbook", cfg.Playbook)
+	case "write_attributes":
+		require("attributes", cfg.Attributes)
+	case "nested_workflow":
+		if !attrPresent(cfg.OperationalWorkflowID) && !attrPresent(cfg.OperationalWorkflowName) {
+			resp.Diagnostics.AddAttributeError(path.Root("operational_workflow_id"), "Missing Required Attribute",
+				fmt.Sprintf("`operational_workflow_id` or `operational_workflow_name` is required when `type = %q`.", tt))
+		}
 	}
 
 	if attrSet(cfg.SourceType) {

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-06-29
+
+### Added
+
+- `mtncloud_task` now supports the `write_attributes` and `nested_workflow` task
+  types (the remaining upstream task types the MTN token can actually create).
+  Appliance-side scripting types (groovy, ruby, javascript) are intentionally
+  omitted because the API denies creating them with this token.
+
 ## [0.2.10] - 2026-06-29
 
 ### Fixed
@@ -96,7 +105,8 @@ Initial release of the MTN Cloud Terraform provider.
   network errors on GETs only) honoring `Retry-After`.
 - Import support for all resources via `terraform import`.
 
-[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.10...HEAD
+[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.11...HEAD
+[0.2.11]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.10...v0.2.11
 [0.2.10]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.7...v0.2.8

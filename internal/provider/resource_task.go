@@ -69,6 +69,11 @@ type taskResourceModel struct {
 	EmailAddress        types.String `tfsdk:"email_address"`
 	Subject             types.String `tfsdk:"subject"`
 	SkipWrappedTemplate types.Bool   `tfsdk:"skip_wrapped_template"`
+
+	Attributes types.String `tfsdk:"attributes"`
+
+	OperationalWorkflowID   types.Int64  `tfsdk:"operational_workflow_id"`
+	OperationalWorkflowName types.String `tfsdk:"operational_workflow_name"`
 }
 
 func NewTaskResource() resource.Resource { return &taskResource{} }
@@ -82,7 +87,8 @@ func (r *taskResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 		return rschema.StringAttribute{Optional: true, Description: desc}
 	}
 	resp.Schema = rschema.Schema{
-		Description: "Manages an MTN Cloud automation task (script, playbook, email, or restart). " +
+		Description: "Manages an MTN Cloud automation task (script, playbook, email, restart, " +
+			"write-attributes, or nested-workflow). " +
 			"The `type` selects which fields apply; fields for other types are rejected at plan time. " +
 			"Remote-exec `password` is write-only and never returned by the API. " +
 			"Note: the MTN Cloud edge runs a WAF that inspects request bodies and may reject inline " +
@@ -159,6 +165,12 @@ func (r *taskResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"email_address":         optStr("Recipient email address (email type)."),
 			"subject":               optStr("Email subject (email type)."),
 			"skip_wrapped_template": rschema.BoolAttribute{Optional: true, Description: "Skip the wrapped email template (email type)."},
+
+			"attributes": optStr("Attributes payload to write, as a JSON object string (write_attributes type). " +
+				"Note: the WAF may reject a JSON body containing braces/quotes; if so, have the WAF allow it."),
+
+			"operational_workflow_id":   rschema.Int64Attribute{Optional: true, Description: "ID of the operational workflow to run (nested_workflow type)."},
+			"operational_workflow_name": optStr("Name of the operational workflow to run (nested_workflow type)."),
 		},
 	}
 }
@@ -201,6 +213,9 @@ func (r *taskResource) input(ctx context.Context, plan taskResourceModel) client
 		EmailAddress:             plan.EmailAddress.ValueString(),
 		Subject:                  plan.Subject.ValueString(),
 		SkipWrappedTemplate:      plan.SkipWrappedTemplate.ValueBool(),
+		Attributes:               plan.Attributes.ValueString(),
+		OperationalWorkflowID:    int64Ptr(plan.OperationalWorkflowID),
+		OperationalWorkflowName:  plan.OperationalWorkflowName.ValueString(),
 	}
 }
 

@@ -29,13 +29,18 @@ type Task struct {
 }
 
 // taskTypeCodes maps the friendly Terraform `type` to the Morpheus taskType.code.
+// Only types the MTN token can actually create are listed: appliance-side
+// scripting types (groovy/javascript/jRuby) are denied to the customer-admin
+// token (probed 2026-06-29) and are intentionally omitted.
 var taskTypeCodes = map[string]string{
-	"shell":      "script",
-	"python":     "jythonTask",
-	"ansible":    "ansibleTask",
-	"powershell": "winrmTask",
-	"email":      "email",
-	"restart":    "restartTask",
+	"shell":            "script",
+	"python":           "jythonTask",
+	"ansible":          "ansibleTask",
+	"powershell":       "winrmTask",
+	"email":            "email",
+	"restart":          "restartTask",
+	"write_attributes": "writeAttributes",
+	"nested_workflow":  "nestedWorkflow",
 }
 
 // TaskTypes is the sorted list of friendly task types accepted by the provider.
@@ -107,6 +112,11 @@ type TaskInput struct {
 	EmailAddress        string
 	Subject             string
 	SkipWrappedTemplate bool
+	// write_attributes
+	Attributes string
+	// nested_workflow
+	OperationalWorkflowID   *int64
+	OperationalWorkflowName string
 }
 
 func mapTaskPayload(in TaskInput) map[string]any {
@@ -198,6 +208,13 @@ func mapTaskPayload(in TaskInput) map[string]any {
 		if in.SkipWrappedTemplate {
 			opts["emailSkipTemplate"] = "on"
 		}
+	case "write_attributes":
+		setIf(opts, "writeAttributes.attributes", in.Attributes)
+	case "nested_workflow":
+		if in.OperationalWorkflowID != nil {
+			opts["operationalWorkflowId"] = *in.OperationalWorkflowID
+		}
+		setIf(opts, "operationalWorkflowName", in.OperationalWorkflowName)
 	}
 	if len(opts) > 0 {
 		task["taskOptions"] = opts
