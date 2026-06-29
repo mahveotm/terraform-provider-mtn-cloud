@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-06-29
+
+### Added
+
+- Governance resources and matching lookup data sources: `mtncloud_role`
+  (with a `permission_set` JSON document in the Morpheus role API shape),
+  `mtncloud_user` (write-only passwords, role assignment via `role_ids`), and
+  `mtncloud_user_group`. Client support for `/roles`, `/users`, and
+  `/user-groups`, with payload unit tests and acceptance tests that assert
+  renames update in place rather than recreate.
+
 ## [0.2.11] - 2026-06-29
 
 ### Added
@@ -105,7 +116,8 @@ Initial release of the MTN Cloud Terraform provider.
   network errors on GETs only) honoring `Retry-After`.
 - Import support for all resources via `terraform import`.
 
-[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.11...HEAD
+[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.12...HEAD
+[0.2.12]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.11...v0.2.12
 [0.2.11]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.10...v0.2.11
 [0.2.10]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.8...v0.2.9

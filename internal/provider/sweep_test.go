@@ -85,4 +85,13 @@ func init() {
 	registerSweeper("mtncloud_job", (*client.Client).ListJobs,
 		func(x client.Job) int64 { return x.ID }, func(x client.Job) string { return x.Name },
 		(*client.Client).DeleteJob)
+	registerSweeper("mtncloud_role", (*client.Client).ListRoles,
+		func(x client.Role) int64 { return x.ID }, func(x client.Role) string { return x.Authority },
+		(*client.Client).DeleteRole)
+	registerSweeper("mtncloud_user", (*client.Client).ListUsers,
+		func(x client.User) int64 { return x.ID }, func(x client.User) string { return x.Username },
+		(*client.Client).DeleteUser)
+	registerSweeper("mtncloud_user_group", (*client.Client).ListUserGroups,
+		func(x client.UserGroup) int64 { return x.ID }, func(x client.UserGroup) string { return x.Name },
+		(*client.Client).DeleteUserGroup)
 }

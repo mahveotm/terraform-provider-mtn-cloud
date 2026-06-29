@@ -201,6 +201,9 @@ func (p *mtnCloudProvider) Resources(_ context.Context) []func() resource.Resour
 		NewWorkflowResource,
 		NewExecuteScheduleResource,
 		NewJobResource,
+		NewRoleResource,
+		NewUserResource,
+		NewUserGroupResource,
 	}
 }
 
@@ -226,6 +229,9 @@ func (p *mtnCloudProvider) DataSources(_ context.Context) []func() datasource.Da
 		NewWorkflowDataSource,
 		NewExecuteScheduleDataSource,
 		NewJobDataSource,
+		NewRoleDataSource,
+		NewUserDataSource,
+		NewUserGroupDataSource,
 	}
 }
 

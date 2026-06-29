@@ -109,6 +109,16 @@ func stringList(ctx context.Context, value types.List) []string {
 	return out
 }
 
+// int64Slice converts a framework List of Int64 to a Go slice.
+func int64Slice(ctx context.Context, value types.List) []int64 {
+	if value.IsNull() || value.IsUnknown() {
+		return nil
+	}
+	var out []int64
+	value.ElementsAs(ctx, &out, false)
+	return out
+}
+
 // stringMap converts a framework Map of strings to a Go map.
 func stringMap(ctx context.Context, value types.Map) map[string]string {
 	if value.IsNull() || value.IsUnknown() {
