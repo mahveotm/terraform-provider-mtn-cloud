@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-06-29
+
+### Fixed
+
+- Fixed `mtncloud_wiki_page.content` planning for heredocs with a trailing
+  newline by treating the API-stored value as semantically equivalent instead of
+  mutating the configured plan value.
+
 ## [0.2.9] - 2026-06-29
 
 ### Fixed
@@ -88,7 +96,8 @@ Initial release of the MTN Cloud Terraform provider.
   network errors on GETs only) honoring `Retry-After`.
 - Import support for all resources via `terraform import`.
 
-[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.10...HEAD
+[0.2.10]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/mahveotm/terraform-provider-mtncloud/compare/v0.1.0...v0.2.7

@@ -2,13 +2,17 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"github.com/mahveotm/terraform-provider-mtncloud/internal/client"
 )
@@ -16,25 +20,77 @@ import (
 var _ resource.Resource = &wikiPageResource{}
 var _ resource.ResourceWithConfigure = &wikiPageResource{}
 var _ resource.ResourceWithImportState = &wikiPageResource{}
+var _ basetypes.StringTypable = wikiContentType{}
+var _ basetypes.StringValuableWithSemanticEquals = wikiContentValue{}
 
-// trimTrailingNewlineModifier normalizes a string's planned value by stripping a
-// single trailing newline, matching what the API stores. This keeps the plan in
-// sync with the post-apply state so wiki content does not show a perpetual diff.
-type trimTrailingNewlineModifier struct{}
-
-func (m trimTrailingNewlineModifier) Description(_ context.Context) string {
-	return "Strips a single trailing newline to match the stored value."
+type wikiContentType struct {
+	basetypes.StringType
 }
 
-func (m trimTrailingNewlineModifier) MarkdownDescription(ctx context.Context) string {
-	return m.Description(ctx)
+func (t wikiContentType) Equal(o attr.Type) bool {
+	_, ok := o.(wikiContentType)
+	return ok
 }
 
-func (m trimTrailingNewlineModifier) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
-		return
+func (t wikiContentType) String() string {
+	return "wikiContentType"
+}
+
+func (t wikiContentType) ValueFromString(_ context.Context, in basetypes.StringValue) (basetypes.StringValuable, diag.Diagnostics) {
+	return wikiContentValue{StringValue: in}, nil
+}
+
+func (t wikiContentType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	value, err := t.StringType.ValueFromTerraform(ctx, in)
+	if err != nil {
+		return nil, err
 	}
-	resp.PlanValue = types.StringValue(strings.TrimSuffix(req.ConfigValue.ValueString(), "\n"))
+	stringValue, ok := value.(basetypes.StringValue)
+	if !ok {
+		return nil, fmt.Errorf("unexpected value type of %T", value)
+	}
+	return wikiContentValue{StringValue: stringValue}, nil
+}
+
+func (t wikiContentType) ValueType(_ context.Context) attr.Value {
+	return wikiContentValue{}
+}
+
+type wikiContentValue struct {
+	basetypes.StringValue
+}
+
+func newWikiContentValue(value string) wikiContentValue {
+	return wikiContentValue{StringValue: types.StringValue(value)}
+}
+
+func (v wikiContentValue) Equal(o attr.Value) bool {
+	other, ok := o.(wikiContentValue)
+	if !ok {
+		return false
+	}
+	return v.StringValue.Equal(other.StringValue)
+}
+
+func (v wikiContentValue) Type(_ context.Context) attr.Type {
+	return wikiContentType{}
+}
+
+func (v wikiContentValue) StringSemanticEquals(ctx context.Context, other basetypes.StringValuable) (bool, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	otherValue, otherDiags := other.ToStringValue(ctx)
+	diags.Append(otherDiags...)
+	if diags.HasError() {
+		return false, diags
+	}
+	if v.IsNull() || v.IsUnknown() || otherValue.IsNull() || otherValue.IsUnknown() {
+		return false, diags
+	}
+	return trimSingleTrailingNewline(v.ValueString()) == trimSingleTrailingNewline(otherValue.ValueString()), diags
+}
+
+func trimSingleTrailingNewline(value string) string {
+	return strings.TrimSuffix(value, "\n")
 }
 
 type wikiPageResource struct {
@@ -42,10 +98,10 @@ type wikiPageResource struct {
 }
 
 type wikiPageResourceModel struct {
-	ID       types.String `tfsdk:"id"`
-	Name     types.String `tfsdk:"name"`
-	Category types.String `tfsdk:"category"`
-	Content  types.String `tfsdk:"content"`
+	ID       types.String     `tfsdk:"id"`
+	Name     types.String     `tfsdk:"name"`
+	Category types.String     `tfsdk:"category"`
+	Content  wikiContentValue `tfsdk:"content"`
 }
 
 func NewWikiPageResource() resource.Resource {
@@ -64,9 +120,9 @@ func (r *wikiPageResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"name":     rschema.StringAttribute{Required: true, Description: "Name (title) of the wiki page."},
 			"category": rschema.StringAttribute{Optional: true, Computed: true, Description: "Category the wiki page belongs to."},
 			"content": rschema.StringAttribute{
-				Optional:      true,
-				PlanModifiers: []planmodifier.String{trimTrailingNewlineModifier{}},
-				Description:   "Markdown content of the wiki page. A trailing newline is trimmed to match the stored value.",
+				Optional:    true,
+				CustomType:  wikiContentType{},
+				Description: "Markdown content of the wiki page.",
 			},
 		},
 	}
@@ -158,6 +214,6 @@ func setWikiPageState(data *wikiPageResourceModel, page *client.WikiPage) {
 	// content stays Optional (not Computed); only overwrite when the API
 	// returns a value so an unset content does not flip to a populated string.
 	if page.Content != "" {
-		data.Content = types.StringValue(page.Content)
+		data.Content = newWikiContentValue(page.Content)
 	}
 }

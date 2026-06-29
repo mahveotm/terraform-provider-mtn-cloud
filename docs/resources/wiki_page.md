@@ -36,7 +36,7 @@ resource "mtncloud_wiki_page" "runbook" {
 ### Optional
 
 - `category` (String) Category the wiki page belongs to.
-- `content` (String) Markdown content of the wiki page. A trailing newline is trimmed to match the stored value.
+- `content` (String) Markdown content of the wiki page.
 
 ### Read-Only
 
